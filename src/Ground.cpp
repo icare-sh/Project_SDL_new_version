@@ -37,6 +37,8 @@ ground::~ground(){
     for (auto a : this->animals)
         delete a;
     this->animals.clear();
+    delete this->shepherd_;
+    delete this->background_;
 }
 void ground::add_sheep()
 {

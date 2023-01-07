@@ -29,13 +29,16 @@ application::~application()
 int application::loop(unsigned period)
 {
     bool quit = false;
-    const int frameDelay = 1000 / 60;
-    auto start =  SDL_GetTicks();
+    auto frameDelay = 1000 / 60;
+    auto start = SDL_GetTicks();
+    auto timeout = SDL_GetTicks() + period * 1000;
     int frameTime;
+    auto remaining_sheeps = 0;
+    int is_wolf_alive = 0;
  
     SDL_Event event;
     
-    while(!quit && (SDL_GetTicks() - start) < period * 1000)
+    while(1)
     { 
         start = SDL_GetTicks();
         while( SDL_PollEvent( &event ) ){
@@ -61,12 +64,41 @@ int application::loop(unsigned period)
             }
 
         }
+        for (auto a : this->ground_ptr_->getLstAnimals()) {
+            if (a->get_type() == WOLF && a->get_alive()) 
+                is_wolf_alive++;
+            if (a->get_type() == SHEEP && a->get_alive()) 
+                remaining_sheeps++;
+        }
+
+        if (is_wolf_alive == 0 || remaining_sheeps == 0 || quit == true || SDL_TICKS_PASSED(SDL_GetTicks(), timeout))
+            goto finish;
+        
+        is_wolf_alive = 0;
+        remaining_sheeps = 0;
+        
         ground_ptr_->update();
         SDL_UpdateWindowSurface(this->window_ptr_);
-
+        
         frameTime = SDL_GetTicks() - start;
-        if(frameDelay > frameTime)
+        if (frameDelay > frameTime)
             SDL_Delay(frameDelay - frameTime);
+    
     }
+
+    finish:
+        if (is_wolf_alive == 0) {
+            std::cout << "You win and you have " << remaining_sheeps << " sheeps remaining" << std::endl;
+        } else
+            std::cout << "There is " << is_wolf_alive << " wolves remaining" << std::endl;
+
+        if (remaining_sheeps == 0) {
+            std::cout << "You lose" << std::endl;
+        } else if (is_wolf_alive != 0) {
+            std::cout << "There is " << remaining_sheeps << " sheeps remaining" << std::endl;
+            std::cout << "Time is over or you quit the game" << std::endl;
+        }
+
+
     return 0;
 }
